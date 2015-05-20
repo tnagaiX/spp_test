@@ -167,8 +167,8 @@ void trace(const Ray &r, int dpt, bool m, const Vec &fl, const Vec &adj, int i)
 		// use QMC to sample the next direction
 		double r1 = 2.*PI*hal(d3 - 1, i), r2 = hal(d3 + 0, i);
 		double r2s = sqrt(r2);
-		Vec w = nl, u = ((fabs(w.x)>.1 ? Vec(0, 1) : Vec(1)) % w).norm();
-		Vec v = w%u, d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1 - r2)).norm();
+		Vec w = nl, u = ((fabs(w.x)>.1 ? Vec(0, 1) : Vec(1)).cross(w)).norm();
+		Vec v = w.cross(u), d = (u*cos(r1)*r2s + v*sin(r1)*r2s + w*sqrt(1 - r2)).norm();
 
 		if (m) {
 			// eye ray
@@ -242,14 +242,41 @@ void trace(const Ray &r, int dpt, bool m, const Vec &fl, const Vec &adj, int i)
 // eyeレイトレーシング（名称はいずれ見直すかも）
 void eye_ray_tracing(int width, int height){
 	// trace eye rays and store measurement points
-	Ray cam(Vec(50, 48, 295.6), Vec(0, -0.042612, -1).norm());
+	//Ray cam(Vec(50, 48, 295.6), Vec(0, -0.042612, -1).norm());
+	Ray cam(Vec(50, 48, 220.0), Vec(0, -0.042612, -1).norm());
+
+	double focal_length = 140.0;
+
+	// イメージセンサの縦幅（物理的大きさ）
+	double imagesensor_size = 30.0;
+	double sensor_to_lens_dist = 30.0;
+
+	double imagesensor_width = imagesensor_size * (double)width / (double)height;
+	double imagesensor_height = imagesensor_size;
+
+	// イメージセンサの上方向
+	Vec imagesensor_up = Vec(0.0, 1.0, 0.0);
+
+	// イメージセンサのuvを求める
+	Vec imagesensor_u, imagesensor_v;
+	imagesensor_u = cam.d.cross(imagesensor_up).norm() * imagesensor_width;
+	imagesensor_v = imagesensor_u.cross(cam.d) * imagesensor_height;
+
+	// オブジェクトプレーンの計算
+	Vec objplane_center = cam.o + cam.d * (focal_length + sensor_to_lens_dist);
+	Vec objplane_u = imagesensor_u;
+	Vec objplane_v = imagesensor_v;
 
 	double sensor_size = 0.5135;
+
+	// コードの書き方として、いったんcamの位置にイメージセンサが置かれている、として書く
+	// これがeduptのimagesensor_sensor相当？
+	// これに合わせて、scene.hも書き直し
 
 	Vec cx = Vec(width * sensor_size / height);
 
 	// 外積の演算は書き換えたい
-	Vec cy = (cx%cam.d).norm()*sensor_size;
+	Vec cy = (cx.cross(cam.d)).norm()*sensor_size;
 
 
 	// eyeパスのトレーシング
@@ -257,9 +284,21 @@ void eye_ray_tracing(int width, int height){
 		fprintf(stderr, "\rEyePass %5.2f%%", 100.0*y / (height - 1));
 		for (int x = 0; x < width; x++) {
 			// イメージセンサ上の位置を計算
+			// [-0.5, 0.5] (0,0)が中心
+			double u_on_imagesensor = (double)x / (double)width - 0.5;
+			double v_on_imagesensor = (double)y / (double)height - 0.5;
 
-			pixel_index = x + y * width;
-			Vec d = cx * ((x + 0.5) / width - 0.5) + cy * (-(y + 0.5) / height + 0.5) + cam.d;
+			Vec pos_on_imagesensor = cam.o
+				+ imagesensor_u * u_on_imagesensor
+				+ imagesensor_v * v_on_imagesensor;
+
+			// オブジェクトプレーン上の
+
+			//pixel_index = x + y * width;
+			//Vec d = cx * ((x + 0.5) / width - 0.5) + cy * (-(y + 0.5) / height + 0.5) + cam.d;
+
+
+
 			trace(Ray(cam.o + d * 140, d.norm()), 0, true, Vec(), Vec(1, 1, 1), 0);
 		}
 	}

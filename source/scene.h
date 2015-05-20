@@ -10,6 +10,7 @@ Sphere sph[] = { // Scene: radius, position, color, material
 	Sphere(1e5, Vec(-1e5 + 99, 40.8, 81.6), Vec(.25, .25, .75), DIFF),//Right
 	Sphere(1e5, Vec(50, 40.8, 1e5), Vec(.75, .75, .75), DIFF),//Back
 	Sphere(1e5, Vec(50, 40.8, -1e5 + 170), Vec(), DIFF),//Front
+	//Sphere(1e5, Vec(50, 40.8, -1e5 + 250), Vec(), DIFF),//Front
 	Sphere(1e5, Vec(50, 1e5, 81.6), Vec(.75, .75, .75), DIFF),//Bottomm
 	Sphere(1e5, Vec(50, -1e5 + 81.6, 81.6), Vec(.75, .75, .75), DIFF),//Top
 	Sphere(16.5, Vec(27, 16.5, 47), Vec(1, 1, 1)*.999, SPEC),//Mirror
