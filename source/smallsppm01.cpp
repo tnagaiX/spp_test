@@ -89,6 +89,8 @@ void build_hash_grid(const int w, const int h) {
 				for (int ix = abs(int(BMin.x)); ix <= abs(int(BMax.x)); ix++)
 				{
 					int hv = hash(ix, iy, iz);
+
+					// 同じhv値になった場合は、値がスタックしていく、と読める
 					hash_grid[hv] = ListAdd(hp, hash_grid[hv]);
 				}
 			}
@@ -191,6 +193,7 @@ void trace(const Ray &r, int dpt, bool m, const Vec &fl, const Vec &adj, int i)
 			// rarely accumulated to the same measurement points at the same time (especially with QMC).
 			// it is also significantly faster.
 			{
+				// 同じhv値のハッシュグリッドの中身を探索
 				List* hp = hash_grid[hash(ix, iy, iz)];
 				while (hp != NULL) {
 					HPoint *hitpoint = hp->id;
@@ -241,18 +244,27 @@ void trace(const Ray &r, int dpt, bool m, const Vec &fl, const Vec &adj, int i)
 
 // eyeレイトレーシング（名称はいずれ見直すかも）
 void eye_ray_tracing(int width, int height){
-	// trace eye rays and store measurement points
-	//Ray cam(Vec(50, 48, 295.6), Vec(0, -0.042612, -1).norm());
+	// To Do 以下はカメラのクラスを定義して分離する
 	Ray cam(Vec(50, 48, 220.0), Vec(0, -0.042612, -1).norm());
 
+	// コードの書き方として、いったんcamの位置にイメージセンサが置かれている、として書く
+	// これがeduptのimagesensor_sensor相当？
+	// パラメータの共通化のための処置
+
+	// To Do: １回やれば良い計算を分離
 	double focal_length = 140.0;
 
 	// イメージセンサの縦幅（物理的大きさ）
 	double imagesensor_size = 30.0;
+
 	double sensor_to_lens_dist = 30.0;
+	//double sensor_to_lens_dist = 42.3;
 
 	double imagesensor_width = imagesensor_size * (double)width / (double)height;
 	double imagesensor_height = imagesensor_size;
+
+	// レンズの位置
+	Vec lens_center = cam.o + cam.d * sensor_to_lens_dist;
 
 	// イメージセンサの上方向
 	Vec imagesensor_up = Vec(0.0, 1.0, 0.0);
@@ -260,46 +272,43 @@ void eye_ray_tracing(int width, int height){
 	// イメージセンサのuvを求める
 	Vec imagesensor_u, imagesensor_v;
 	imagesensor_u = cam.d.cross(imagesensor_up).norm() * imagesensor_width;
-	imagesensor_v = imagesensor_u.cross(cam.d) * imagesensor_height;
+	imagesensor_v = imagesensor_u.cross(cam.d).norm() * imagesensor_height;
 
 	// オブジェクトプレーンの計算
 	Vec objplane_center = cam.o + cam.d * (focal_length + sensor_to_lens_dist);
 	Vec objplane_u = imagesensor_u;
 	Vec objplane_v = imagesensor_v;
 
-	double sensor_size = 0.5135;
-
-	// コードの書き方として、いったんcamの位置にイメージセンサが置かれている、として書く
-	// これがeduptのimagesensor_sensor相当？
-	// これに合わせて、scene.hも書き直し
-
-	Vec cx = Vec(width * sensor_size / height);
-
-	// 外積の演算は書き換えたい
-	Vec cy = (cx.cross(cam.d)).norm()*sensor_size;
-
-
+	// レンズのモデルは一旦ピンホールで書く
 	// eyeパスのトレーシング
 	for (int y = 0; y < height; y++){
 		fprintf(stderr, "\rEyePass %5.2f%%", 100.0*y / (height - 1));
 		for (int x = 0; x < width; x++) {
 			// イメージセンサ上の位置を計算
 			// [-0.5, 0.5] (0,0)が中心
-			double u_on_imagesensor = (double)x / (double)width - 0.5;
+			double u_on_imagesensor = -((double)x / (double)width - 0.5); // 左右反転を考慮
 			double v_on_imagesensor = (double)y / (double)height - 0.5;
 
 			Vec pos_on_imagesensor = cam.o
 				+ imagesensor_u * u_on_imagesensor
 				+ imagesensor_v * v_on_imagesensor;
 
-			// オブジェクトプレーン上の
+			// オブジェクトプレーン上の位置を計算
+			double ratio = focal_length / sensor_to_lens_dist;
+			double u_on_objplane = -ratio * u_on_imagesensor;
+			double v_on_objplane = -ratio * v_on_imagesensor;
 
-			//pixel_index = x + y * width;
-			//Vec d = cx * ((x + 0.5) / width - 0.5) + cy * (-(y + 0.5) / height + 0.5) + cam.d;
+			Vec pos_on_objplane = objplane_center
+				+ objplane_u * u_on_objplane
+				+ objplane_v * v_on_objplane;
 
+			// これグローバル扱いになっているね
+			// traceに渡すように変更すべきか、悩む
+			pixel_index = x + y * width;
+			
+			Vec dir = pos_on_objplane - lens_center;
 
-
-			trace(Ray(cam.o + d * 140, d.norm()), 0, true, Vec(), Vec(1, 1, 1), 0);
+			trace(Ray(lens_center, dir.norm()), 0, true, Vec(), Vec(1, 1, 1), 0);
 		}
 	}
 	fprintf(stderr, "\n");
