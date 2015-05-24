@@ -23,7 +23,7 @@ struct LighttracingResult {
 LighttracingResult generate_vertices_by_lighttracing(const Camera &camera, Random *rnd, std::vector<Vertex> &vertices) {
 	// 光源上にサンプル点生成（y0）
 	double pdf_A_on_light;
-	const Vec position_on_light = spheres[LightID].position + sample_sphere(spheres[LightID].radius, rnd, &pdf_A_on_light);
+	const Vec position_on_light = spheres[LightID].position + sample_sphere(spheres[LightID].radius, rnd, &pdf_A_on_light, 0.005);
 	const Vec normal_on_light = normalize(position_on_light - spheres[LightID].position);
 	double total_pdf_A = pdf_A_on_light; // 確率密度の積を保持（面積測度に関する確率密度）
 

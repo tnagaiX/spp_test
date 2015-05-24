@@ -9,7 +9,8 @@ namespace edubpt {
 
 // レンダリングするシーンデータ
 	const Sphere spheres[] = {
-		Sphere(14.0, Vec(50.0, 40.8, 263.8), Color(3000, 3000, 3000), Color(), REFLECTION_TYPE_DIFFUSE), //照明
+		//Sphere(7.5, Vec(50.0, 72.5, 81.6), Color(16, 16, 16), Color(), REFLECTION_TYPE_DIFFUSE), //照明
+		Sphere(14.0, Vec(50.0, 40.8, 263.8), Color(8000, 8000, 8000), Color(), REFLECTION_TYPE_DIFFUSE), //照明
 		Sphere(1e5, Vec(1e5 + 1, 40.8, 81.6), Color(), Color(0.75, 0.25, 0.25), REFLECTION_TYPE_DIFFUSE), // 左
 		Sphere(1e5, Vec(-1e5 + 99, 40.8, 81.6), Color(), Color(0.25, 0.25, 0.75), REFLECTION_TYPE_DIFFUSE), // 右
 		Sphere(1e5, Vec(50, 40.8, 1e5), Color(), Color(0.75, 0.75, 0.75), REFLECTION_TYPE_DIFFUSE), // 奥

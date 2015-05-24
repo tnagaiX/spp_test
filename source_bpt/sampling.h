@@ -42,6 +42,21 @@ Vec sample_sphere(const double R, Random *rnd, double *pdf_A) {
 	return R * Vec(sz * cos(phi), sz * sin(phi), z);
 }
 
+// 半径Rの球面上から一点をサンプリング
+inline double sample_sphere_pdf_A(const double R, double delta_z) {
+	return 1.0 / (2.0 * kPI * R * R * delta_z);
+}
+Vec sample_sphere(const double R, Random *rnd, double *pdf_A, double delta_z) {
+	const double z = rnd->next01() * delta_z -1.0;
+
+	const double sz = sqrt(1 - z*z);
+	const double phi = rnd->next01() * 2.0 * kPI;
+
+	*pdf_A = sample_sphere_pdf_A(R, delta_z);
+
+	return R * Vec(sz * cos(phi), sz * sin(phi), z);
+}
+
 // ロシアンルーレットの確率計算関数
 // 局所的な情報に基づいて決定する
 double russian_roulette(const Sphere &sphere) {
